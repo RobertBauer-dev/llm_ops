@@ -1,0 +1,56 @@
+# Core LLM Libraries
+openai>=1.0.0
+anthropic>=0.7.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-anthropic>=0.0.5
+
+# Monitoring & Observability
+prometheus-client>=0.17.0
+grafana-api>=1.0.3
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+
+# Data Processing & Storage
+pandas>=2.0.0
+numpy>=1.24.0
+sqlalchemy>=2.0.0
+redis>=4.5.0
+
+# Web Framework & API
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+
+# Configuration & Environment
+python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
+
+# Logging & Utilities
+structlog>=23.1.0
+rich>=13.0.0
+click>=8.1.0
+
+# Development Tools
+jupyter>=1.0.0
+ipykernel>=6.25.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Model Registry & Versioning
+mlflow>=2.6.0
+dvc>=3.0.0
+
+# Cost Tracking
+tiktoken>=0.5.0
