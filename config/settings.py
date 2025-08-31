@@ -3,6 +3,7 @@ Konfigurationsdatei für das LLM-Ops Projekt.
 Verwaltet alle Einstellungen für Modelle, Prompts, Monitoring und Deployment.
 """
 
+import os
 from pydantic_settings import BaseSettings
 from typing import Dict, List, Optional
 from enum import Enum
@@ -65,9 +66,8 @@ class Settings(BaseSettings):
     
     # Evaluation
     evaluation_dataset_path: str = "data/evaluation/"
-    evaluation_metrics: List[str] = [
-        "accuracy", "latency", "cost", "user_satisfaction"
-    ]
+    # evaluation_metrics wird als String definiert und später geparst
+    evaluation_metrics_str: str = "accuracy,latency,cost,user_satisfaction"
     
     # Logging
     log_level: str = "INFO"
@@ -79,11 +79,25 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
         case_sensitive = False
+        # Ignoriere .env Datei wenn sie nicht existiert
+        env_ignore_empty = True
+    
+    @property
+    def evaluation_metrics(self) -> List[str]:
+        """Gibt die Evaluations-Metriken als Liste zurück"""
+        return [metric.strip() for metric in self.evaluation_metrics_str.split(",")]
 
 
-# Global settings instance
-settings = Settings()
+# Global settings instance mit Fehlerbehandlung
+try:
+    settings = Settings()
+except Exception as e:
+    print(f"Warnung: Fehler beim Laden der Settings: {e}")
+    print("Verwende Standard-Einstellungen...")
+    # Fallback auf Standard-Einstellungen
+    settings = Settings(_env_file=None)
 
 
 # Model-spezifische Konfigurationen

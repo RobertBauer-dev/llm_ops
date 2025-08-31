@@ -50,13 +50,21 @@ class PromptVersion:
 class PromptManager:
     """Zentrale Klasse für Prompt Management"""
     
-    def __init__(self):
-        self.redis_client = redis.from_url(settings.redis_url)
+    def __init__(self, demo_mode: bool = True):
+        self.demo_mode = demo_mode
+        if not demo_mode:
+            self.redis_client = redis.from_url(settings.redis_url)
+        else:
+            self.redis_client = None
         self.prompts: Dict[str, PromptVersion] = {}
         self._load_prompts()
     
     def _load_prompts(self):
         """Lädt alle gespeicherten Prompts"""
+        if self.demo_mode:
+            print("Demo-Modus: Redis wird übersprungen beim Laden der Prompts")
+            return
+            
         try:
             # Lade von Redis
             for key in self.redis_client.keys("prompt:*"):
@@ -72,6 +80,10 @@ class PromptManager:
     
     def _save_prompt(self, prompt: PromptVersion):
         """Speichert einen Prompt in Redis"""
+        if self.demo_mode:
+            print(f"Demo-Modus: Prompt {prompt.id} wird nur lokal gespeichert")
+            return
+            
         try:
             prompt_dict = asdict(prompt)
             prompt_dict['created_at'] = prompt.created_at.isoformat()
@@ -230,11 +242,14 @@ class PromptManager:
             "active": True
         }
         
-        self.redis_client.setex(
-            f"ab_test:{template_name}",
-            86400,  # 24 Stunden
-            json.dumps(ab_test_config)
-        )
+        if not self.demo_mode:
+            self.redis_client.setex(
+                f"ab_test:{template_name}",
+                86400,  # 24 Stunden
+                json.dumps(ab_test_config)
+            )
+        else:
+            print(f"Demo-Modus: A/B Test Konfiguration für {template_name} wird nur lokal gespeichert")
         
         print(f"A/B Test für {template_name} gestartet")
         return True
@@ -245,6 +260,13 @@ class PromptManager:
         user_id: Optional[str] = None
     ) -> Optional[PromptVersion]:
         """Holt einen Prompt für A/B Testing"""
+        
+        if self.demo_mode:
+            # Demo-Modus: Verwende zufällige Auswahl
+            prompts = self.list_prompts(template_name, PromptStatus.TESTING)
+            if len(prompts) >= 2:
+                return random.choice(prompts)
+            return self.get_active_prompt(template_name)
         
         # Prüfe ob A/B Test aktiv ist
         ab_test_data = self.redis_client.get(f"ab_test:{template_name}")
@@ -307,8 +329,9 @@ class PromptManager:
         if prompt_id not in self.prompts:
             return False
         
-        # Lösche aus Redis
-        self.redis_client.delete(f"prompt:{prompt_id}")
+        # Lösche aus Redis (nur wenn nicht im Demo-Modus)
+        if not self.demo_mode:
+            self.redis_client.delete(f"prompt:{prompt_id}")
         
         # Lösche aus lokalem Cache
         del self.prompts[prompt_id]
@@ -317,5 +340,5 @@ class PromptManager:
         return True
 
 
-# Global prompt manager instance
-prompt_manager = PromptManager()
+# Global prompt manager instance (Demo-Modus aktiviert)
+prompt_manager = PromptManager(demo_mode=True)

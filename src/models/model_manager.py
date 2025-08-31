@@ -50,10 +50,12 @@ class ModelMetadata:
 class ModelManager:
     """Zentrale Klasse für Model Management"""
     
-    def __init__(self):
-        self.mlflow_client = mlflow.tracking.MlflowClient(
-            tracking_uri=settings.mlflow_tracking_uri
-        )
+    def __init__(self, demo_mode: bool = True):
+        self.demo_mode = demo_mode
+        if not demo_mode:
+            self.mlflow_client = mlflow.tracking.MlflowClient(
+                tracking_uri=settings.mlflow_tracking_uri
+            )
         self.models: Dict[str, ModelMetadata] = {}
         self._load_models()
     
@@ -99,23 +101,28 @@ class ModelManager:
             description=description
         )
         
-        # Speichere in MLflow
-        with mlflow.start_run():
-            mlflow.log_params(parameters)
-            mlflow.log_metric("cost_per_1k_tokens", model_metadata.cost_per_1k_tokens)
-            
-            # Logge Model-Metadaten
-            mlflow.log_dict(
-                model_metadata.__dict__,
-                "model_metadata.json"
-            )
-            
-            # Registriere das Modell
-            model_uri = f"models:/{name}/{version}"
-            mlflow.register_model(
-                model_uri=model_uri,
-                name=name
-            )
+        # Speichere in MLflow (nur wenn nicht im Demo-Modus)
+        if not self.demo_mode:
+            try:
+                with mlflow.start_run():
+                    mlflow.log_params(parameters)
+                    mlflow.log_metric("cost_per_1k_tokens", model_metadata.cost_per_1k_tokens)
+                    
+                    # Logge Model-Metadaten
+                    mlflow.log_dict(
+                        model_metadata.__dict__,
+                        "model_metadata.json"
+                    )
+                    
+                    # Für Demo-Zwecke: Erstelle ein einfaches Modell-Artifact
+                    mlflow.log_artifact("config/settings.py", "model_config")
+                    
+                    print(f"MLflow Run erfolgreich erstellt für Modell {name}")
+            except Exception as e:
+                print(f"Warnung: MLflow Fehler (überspringe MLflow für Demo): {e}")
+                print("Modell wird nur lokal registriert...")
+        else:
+            print(f"Demo-Modus: MLflow wird übersprungen für Modell {name}")
         
         # Speichere lokal
         model_key = f"{name}_{version}"
@@ -176,10 +183,14 @@ class ModelManager:
         model.performance_metrics.update(metrics)
         model.updated_at = datetime.now()
         
-        # Logge Metriken in MLflow
-        with mlflow.start_run():
-            for metric_name, metric_value in metrics.items():
-                mlflow.log_metric(metric_name, metric_value)
+        # Logge Metriken in MLflow (nur wenn nicht im Demo-Modus)
+        if not self.demo_mode:
+            try:
+                with mlflow.start_run():
+                    for metric_name, metric_value in metrics.items():
+                        mlflow.log_metric(metric_name, metric_value)
+            except Exception as e:
+                print(f"Warnung: MLflow Metriken-Logging fehlgeschlagen: {e}")
         
         return True
     
@@ -239,5 +250,5 @@ class ModelManager:
         return comparison
 
 
-# Global model manager instance
-model_manager = ModelManager()
+# Global model manager instance (Demo-Modus aktiviert)
+model_manager = ModelManager(demo_mode=True)

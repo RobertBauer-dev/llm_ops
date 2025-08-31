@@ -12,12 +12,16 @@ help:
 	@echo "  make install      - Installiert alle Dependencies (in venv)"
 	@echo "  make setup        - Vollständiges Setup für Entwicklung"
 	@echo "  make test         - Führt alle Tests aus"
+	@echo "  make test-imports - Testet alle Imports"
 	@echo "  make run          - Startet die Hauptanwendung"
 	@echo "  make demo         - Führt die Demo aus"
 	@echo "  make clean        - Bereinigt temporäre Dateien"
 	@echo "  make lint         - Führt Code-Linting aus"
 	@echo "  make format       - Formatiert Code mit Black"
 	@echo "  make notebook     - Startet Jupyter Notebook"
+	@echo "  make monitoring   - Startet Monitoring Services (Prometheus, Grafana, MLflow)"
+	@echo "  make monitoring-stop - Stoppt Monitoring Services"
+	@echo "  make monitoring-status - Zeigt Status der Monitoring Services"
 	@echo ""
 
 # Virtuelle Umgebung erstellen
@@ -80,6 +84,16 @@ test:
 	fi
 	@echo "Führe Tests aus..."
 	PYTHONPATH=$(PWD) venv/bin/pytest tests/ -v
+
+# Import-Tests ausführen (in venv)
+test-imports:
+	@echo "Prüfe virtuelle Umgebung..."
+	@if [ ! -d "venv" ]; then \
+		echo "Virtuelle Umgebung nicht gefunden. Führe 'make setup' aus"; \
+		exit 1; \
+	fi
+	@echo "Teste alle Imports..."
+	PYTHONPATH=$(PWD) venv/bin/python test_imports.py
 
 # Hauptanwendung starten (in venv)
 run:
@@ -159,10 +173,68 @@ docker-run:
 
 # Monitoring starten
 monitoring:
-	@echo "Starte Monitoring Services..."
-	@echo "Prometheus: http://localhost:8000"
+	@echo "Starte Monitoring Services mit Docker Compose..."
+	@if [ ! -f "docker-compose.yml" ]; then \
+		echo "❌ docker-compose.yml nicht gefunden!"; \
+		echo "Erstelle eine minimale docker-compose.yml für Monitoring..."; \
+		echo "version: '3.8'" > docker-compose.yml; \
+		echo "services:" >> docker-compose.yml; \
+		echo "  prometheus:" >> docker-compose.yml; \
+		echo "    image: prom/prometheus:latest" >> docker-compose.yml; \
+		echo "    ports:" >> docker-compose.yml; \
+		echo "      - '9090:9090'" >> docker-compose.yml; \
+		echo "    volumes:" >> docker-compose.yml; \
+		echo "      - ./prometheus.yml:/etc/prometheus/prometheus.yml" >> docker-compose.yml; \
+		echo "  grafana:" >> docker-compose.yml; \
+		echo "    image: grafana/grafana:latest" >> docker-compose.yml; \
+		echo "    ports:" >> docker-compose.yml; \
+		echo "      - '3000:3000'" >> docker-compose.yml; \
+		echo "    environment:" >> docker-compose.yml; \
+		echo "      - GF_SECURITY_ADMIN_PASSWORD=admin" >> docker-compose.yml; \
+		echo "  mlflow:" >> docker-compose.yml; \
+		echo "    image: python:3.9" >> docker-compose.yml; \
+		echo "    ports:" >> docker-compose.yml; \
+		echo "      - '5000:5000'" >> docker-compose.yml; \
+		echo "    command: sh -c 'pip install mlflow && mlflow server --host 0.0.0.0 --port 5000'" >> docker-compose.yml; \
+	fi
+	@if [ ! -f "prometheus.yml" ]; then \
+		echo "Erstelle prometheus.yml Konfiguration..."; \
+		echo "global:" > prometheus.yml; \
+		echo "  scrape_interval: 15s" >> prometheus.yml; \
+		echo "scrape_configs:" >> prometheus.yml; \
+		echo "  - job_name: 'prometheus'" >> prometheus.yml; \
+		echo "    static_configs:" >> prometheus.yml; \
+		echo "      - targets: ['localhost:9090']" >> prometheus.yml; \
+	fi
+	docker-compose up -d prometheus grafana
+	@echo "MLflow wird separat gestartet..."
+	docker run -d --name mlflow-server --network llm_ops_default -p 5000:5000 python:3.9 sh -c "pip install mlflow && mlflow server --host 0.0.0.0 --port 5000"
+	@echo ""
+	@echo "🚀 Monitoring Services gestartet!"
+	@echo "Prometheus: http://localhost:9090"
+	@echo "Grafana: http://localhost:3000 (admin/admin)"
+	@echo "MLflow: http://localhost:5001"
+	@echo ""
+	@echo "Services stoppen mit: make monitoring-stop"
+
+# Monitoring Services stoppen
+monitoring-stop:
+	@echo "Stoppe Monitoring Services..."
+	docker-compose down
+	docker stop mlflow-server 2>/dev/null || true
+	docker rm mlflow-server 2>/dev/null || true
+	@echo "Monitoring Services gestoppt!"
+
+# Monitoring Status prüfen
+monitoring-status:
+	@echo "Prüfe Status der Monitoring Services..."
+	@echo "Docker Compose Services:"
+	docker-compose ps
+	@echo ""
+	@echo "Verfügbare URLs:"
+	@echo "Prometheus: http://localhost:9090"
 	@echo "Grafana: http://localhost:3000"
-	@echo "MLflow: http://localhost:5000"
+	@echo "MLflow: http://localhost:5001"
 
 # Datenbank initialisieren (in venv)
 init-db:

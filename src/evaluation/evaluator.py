@@ -54,16 +54,16 @@ class EvaluationResult:
     test_case_id: str
     model_name: str
     model_version: str
-    prompt_id: Optional[str]
     actual_output: str
     actual_tokens: int
     latency_ms: float
     cost_usd: float
     success: bool
+    timestamp: datetime
+    prompt_id: Optional[str] = None
     error_message: Optional[str] = None
     accuracy_score: Optional[float] = None
     user_satisfaction_score: Optional[float] = None
-    timestamp: datetime
 
 
 @dataclass
@@ -72,7 +72,6 @@ class EvaluationSummary:
     evaluation_id: str
     model_name: str
     model_version: str
-    prompt_id: Optional[str]
     total_tests: int
     successful_tests: int
     avg_accuracy: float
@@ -84,6 +83,7 @@ class EvaluationSummary:
     end_time: datetime
     test_categories: Dict[str, int]
     error_summary: Dict[str, int]
+    prompt_id: Optional[str] = None
 
 
 class ModelEvaluator:
@@ -179,14 +179,13 @@ class ModelEvaluator:
                     test_case_id=test_case.id,
                     model_name=model_name,
                     model_version=model_version,
-                    prompt_id=None,
                     actual_output="",
                     actual_tokens=0,
                     latency_ms=0,
                     cost_usd=0,
                     success=False,
-                    error_message=str(e),
-                    timestamp=datetime.now()
+                    timestamp=datetime.now(),
+                    error_message=str(e)
                 )
                 results.append(error_result)
         
@@ -265,14 +264,13 @@ class ModelEvaluator:
             test_case_id=test_case.id,
             model_name=model_name,
             model_version=model_version,
-            prompt_id=None,  # Wird später gesetzt
             actual_output=actual_output,
             actual_tokens=actual_tokens,
             latency_ms=actual_latency_ms,
             cost_usd=cost_usd,
             success=True,
-            accuracy_score=accuracy_score,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
+            accuracy_score=accuracy_score
         )
         
         return result
@@ -314,7 +312,6 @@ class ModelEvaluator:
                 evaluation_id=evaluation_id,
                 model_name=model_name,
                 model_version=model_version,
-                prompt_id=None,
                 total_tests=len(results),
                 successful_tests=0,
                 avg_accuracy=0.0,
@@ -325,7 +322,8 @@ class ModelEvaluator:
                 start_time=start_time,
                 end_time=end_time,
                 test_categories={},
-                error_summary={}
+                error_summary={},
+                prompt_id=None
             )
         
         # Berechne Metriken
@@ -350,7 +348,6 @@ class ModelEvaluator:
             evaluation_id=evaluation_id,
             model_name=model_name,
             model_version=model_version,
-            prompt_id=None,
             total_tests=len(results),
             successful_tests=len(successful_results),
             avg_accuracy=sum(accuracies) / len(accuracies) if accuracies else 0.0,
@@ -361,7 +358,8 @@ class ModelEvaluator:
             start_time=start_time,
             end_time=end_time,
             test_categories=categories,
-            error_summary=error_summary
+            error_summary=error_summary,
+            prompt_id=None
         )
     
     def _save_evaluation_summary(self, summary: EvaluationSummary):

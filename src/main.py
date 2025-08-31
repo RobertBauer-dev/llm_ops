@@ -13,6 +13,7 @@ sys.path.insert(0, str(project_root))
 
 import time
 import uuid
+import structlog
 from typing import Dict, Any
 from datetime import datetime
 

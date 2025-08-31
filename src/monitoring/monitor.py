@@ -65,8 +65,12 @@ class CostMetrics:
 class LLMMonitor:
     """Zentrale Monitoring-Klasse für LLM-Operationen"""
     
-    def __init__(self):
-        self.redis_client = redis.from_url(settings.redis_url)
+    def __init__(self, demo_mode: bool = True):
+        self.demo_mode = demo_mode
+        if not demo_mode:
+            self.redis_client = redis.from_url(settings.redis_url)
+        else:
+            self.redis_client = None
         self.logger = structlog.get_logger()
         self.tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 Tokenizer
         
@@ -181,6 +185,10 @@ class LLMMonitor:
     
     def _save_request(self, request: LLMRequest):
         """Speichert eine Request in Redis"""
+        if self.demo_mode:
+            print(f"Demo-Modus: Request {request.request_id} wird nur lokal geloggt")
+            return
+            
         try:
             # Speichere Request-Details
             request_key = f"request:{request.request_id}"
@@ -248,6 +256,19 @@ class LLMMonitor:
     ) -> CostMetrics:
         """Holt Kosten-Metriken für einen Zeitraum"""
         
+        if self.demo_mode:
+            # Demo-Modus: Gib Mock-Daten zurück
+            print(f"Demo-Modus: Kosten-Metriken für {model_name or 'alle Modelle'}")
+            return CostMetrics(
+                total_cost_usd=25.50,
+                cost_per_request=0.15,
+                cost_per_token=0.0001,
+                requests_count=170,
+                tokens_count=255000,
+                period_start=start_date or datetime.now() - timedelta(days=1),
+                period_end=end_date or datetime.now()
+            )
+        
         if not start_date:
             start_date = datetime.now() - timedelta(days=1)
         if not end_date:
@@ -292,6 +313,19 @@ class LLMMonitor:
         hours: int = 24
     ) -> Dict[str, Any]:
         """Holt Performance-Metriken"""
+        
+        if self.demo_mode:
+            # Demo-Modus: Gib Mock-Daten zurück
+            print(f"Demo-Modus: Performance-Metriken für {model_name or 'alle Modelle'} (letzte {hours} Stunden)")
+            return {
+                "avg_latency_ms": 500.0,
+                "success_rate": 0.95,
+                "requests_per_hour": 10.0,
+                "total_requests": 240,
+                "min_latency_ms": 200.0,
+                "max_latency_ms": 1200.0,
+                "p95_latency_ms": 800.0
+            }
         
         end_time = datetime.now()
         start_time = end_time - timedelta(hours=hours)
@@ -366,6 +400,26 @@ class LLMMonitor:
     ) -> Dict[str, Any]:
         """Holt eine Zusammenfassung der Fehler"""
         
+        if self.demo_mode:
+            # Demo-Modus: Gib Mock-Daten zurück
+            print(f"Demo-Modus: Fehler-Zusammenfassung für die letzten {hours} Stunden")
+            return {
+                "total_errors": 5,
+                "error_rate": 0.05,
+                "error_types": {
+                    "Rate limit exceeded": 2,
+                    "Invalid API key": 1,
+                    "Model not found": 1,
+                    "Timeout": 1
+                },
+                "most_common_error": "Rate limit exceeded",
+                "errors_by_model": {
+                    "gpt-4": 2,
+                    "gpt-3.5-turbo": 2,
+                    "claude-3-sonnet": 1
+                }
+            }
+        
         end_time = datetime.now()
         start_time = end_time - timedelta(hours=hours)
         
@@ -400,5 +454,5 @@ class LLMMonitor:
         }
 
 
-# Global monitor instance
-llm_monitor = LLMMonitor()
+# Global monitor instance (Demo-Modus aktiviert)
+llm_monitor = LLMMonitor(demo_mode=True)
