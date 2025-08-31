@@ -3,6 +3,14 @@ Hauptanwendung für LLM-Ops Beispielprojekt
 Demonstriert alle Konzepte in der Praxis
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Füge das Projekt-Root-Verzeichnis zum Python-Pfad hinzu
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 import time
 import uuid
 from typing import Dict, Any

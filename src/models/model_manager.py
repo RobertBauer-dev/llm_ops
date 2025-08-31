@@ -3,6 +3,14 @@ Model Manager für LLM-Ops
 Verwaltet Modelle, Versionierung und Deployment
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Füge das Projekt-Root-Verzeichnis zum Python-Pfad hinzu
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import mlflow
 import mlflow.pytorch
 from typing import Dict, List, Optional, Any

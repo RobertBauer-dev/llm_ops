@@ -3,6 +3,14 @@ Evaluation System für LLM-Ops
 Testet Model-Performance und Prompt-Effektivität
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Füge das Projekt-Root-Verzeichnis zum Python-Pfad hinzu
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import json
 import time
 import uuid

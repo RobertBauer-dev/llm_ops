@@ -3,6 +3,14 @@ Prompt Manager für LLM-Ops
 Verwaltet Prompts, Versionierung und A/B Testing
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Füge das Projekt-Root-Verzeichnis zum Python-Pfad hinzu
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import json
 import hashlib
 from typing import Dict, List, Optional, Any
