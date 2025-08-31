@@ -14,6 +14,7 @@ help:
 	@echo "  make test         - Führt alle Tests aus"
 	@echo "  make test-imports - Testet alle Imports"
 	@echo "  make run          - Startet die Hauptanwendung"
+	@echo "  make api          - Startet den API-Server"
 	@echo "  make demo         - Führt die Demo aus"
 	@echo "  make clean        - Bereinigt temporäre Dateien"
 	@echo "  make lint         - Führt Code-Linting aus"
@@ -104,6 +105,16 @@ run:
 	fi
 	@echo "Starte LLM-Ops Anwendung..."
 	PYTHONPATH=$(PWD) venv/bin/python src/main.py
+
+# API-Server starten (in venv)
+api:
+	@echo "Prüfe virtuelle Umgebung..."
+	@if [ ! -d "venv" ]; then \
+		echo "Virtuelle Umgebung nicht gefunden. Führe 'make setup' aus"; \
+		exit 1; \
+	fi
+	@echo "Starte API-Server..."
+	PYTHONPATH=$(PWD) venv/bin/uvicorn src.api.app:app --host 0.0.0.0 --port 8001 --reload
 
 # Demo ausführen (in venv)
 demo:

@@ -250,5 +250,5 @@ class ModelManager:
         return comparison
 
 
-# Global model manager instance (Demo-Modus aktiviert)
-model_manager = ModelManager(demo_mode=True)
+# Global model manager instance (Produktions-Modus aktiviert)
+model_manager = ModelManager(demo_mode=False)

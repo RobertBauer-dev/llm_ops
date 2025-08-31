@@ -454,5 +454,5 @@ class LLMMonitor:
         }
 
 
-# Global monitor instance (Demo-Modus aktiviert)
-llm_monitor = LLMMonitor(demo_mode=True)
+# Global monitor instance (Produktions-Modus aktiviert)
+llm_monitor = LLMMonitor(demo_mode=False)

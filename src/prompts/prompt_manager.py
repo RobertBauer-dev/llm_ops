@@ -340,5 +340,5 @@ class PromptManager:
         return True
 
 
-# Global prompt manager instance (Demo-Modus aktiviert)
-prompt_manager = PromptManager(demo_mode=True)
+# Global prompt manager instance (Produktions-Modus aktiviert)
+prompt_manager = PromptManager(demo_mode=False)
